@@ -8,7 +8,6 @@ from typing import Dict, List, Set, Optional, Any, Callable
 from enum import Enum
 from dataclasses import dataclass, field
 from datetime import datetime
-from itertools import islice
 import networkx as nx
 
 
@@ -211,19 +210,14 @@ class ExecutionGraph:
         for source in sources:
             for sink in sinks:
                 paths_iter = nx.all_simple_paths(self.graph, source, sink)
-                if max_paths is None:
-                    paths = list(paths_iter)
-                else:
-                    remaining = max_paths - path_count
-                    limit_error = f"Graph contains more than {max_paths} paths; limit exceeded."
-                    if remaining <= 0:
-                        raise ValueError(limit_error)
-                    paths = list(islice(paths_iter, remaining))
-                    extra_path = next(paths_iter, None)
-                    if extra_path is not None:
-                        raise ValueError(limit_error)
+                limit_error = (
+                    f"Graph contains more than {max_paths} paths; limit exceeded."
+                    if max_paths is not None else None
+                )
                 
-                for path in paths:
+                for path in paths_iter:
+                    if max_paths is not None and path_count >= max_paths:
+                        raise ValueError(limit_error)
                     path_count += 1
                     applications.append({
                         "branch_id": f"branch_{next_branch_id}",
