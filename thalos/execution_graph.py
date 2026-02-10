@@ -208,14 +208,16 @@ class ExecutionGraph:
         
         for source in sources:
             for sink in sinks:
-                paths_iter = nx.all_simple_paths(self.graph, source, sink)
+                paths_iter_raw = nx.all_simple_paths(self.graph, source, sink)
                 if max_paths is not None:
                     remaining = max_paths - path_count
-                    if remaining < 0:
+                    if remaining <= 0:
                         raise ValueError(
                             f"Path count exceeds max_paths limit (found {path_count}, limit {max_paths})"
                         )
-                    paths_iter = islice(paths_iter, remaining + 1)
+                    paths_iter = islice(paths_iter_raw, remaining)
+                else:
+                    paths_iter = paths_iter_raw
                 
                 for path in paths_iter:
                     prospective_count = path_count + 1
@@ -238,5 +240,12 @@ class ExecutionGraph:
                         ]
                     })
                     next_branch_id += 1
+                
+                if max_paths is not None and path_count >= max_paths:
+                    extra_path = next(paths_iter_raw, None)
+                    if extra_path is not None:
+                        raise ValueError(
+                            f"Path count exceeds max_paths limit (found {path_count + 1}, limit {max_paths})"
+                        )
         
         return applications
