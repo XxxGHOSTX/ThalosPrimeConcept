@@ -1,8 +1,8 @@
 ThalosPrimeConcept
-└── .gitignore
-└── LICENSE
+├── docs/
+│   └── structure.md
+├── src/
+│   └── structure.py
+├── .gitignore
+├── LICENSE
 └── README.md
-└── docs/
-    └── structure.md
-└── src/
-    └── structure.py

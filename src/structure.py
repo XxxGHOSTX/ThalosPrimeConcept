@@ -38,24 +38,32 @@ def iter_paths(base: Path, ignores: Set[str]) -> Iterable[Path]:
 
 def render_tree(base: Path, ignores: Set[str]) -> str:
     lines = [base.resolve().name]
-    for path in iter_paths(base, ignores):
-        rel = path.relative_to(base)
-        depth = len(rel.parts)
-        indent = "    " * (depth - 1) if depth else ""
-        connector = "└── " if depth else ""
-        suffix = "/" if path.is_dir() else ""
-        lines.append(f"{indent}{connector}{rel.name}{suffix}")
+
+    def walk(current: Path, prefix: str = "") -> None:
+        children = [
+            child
+            for child in sorted(current.iterdir(), key=lambda p: (not p.is_dir(), p.name))
+            if not _should_ignore(child, ignores)
+        ]
+        for index, child in enumerate(children):
+            is_last = index == len(children) - 1
+            connector = "└── " if is_last else "├── "
+            suffix = "/" if child.is_dir() else ""
+            lines.append(f"{prefix}{connector}{child.name}{suffix}")
+            if child.is_dir():
+                extension = "    " if is_last else "│   "
+                walk(child, prefix + extension)
+
+    walk(base)
     return "\n".join(lines)
 
 
 def find_empty_files(base: Path, ignores: Set[str]) -> list[Path]:
-    empty_files: list[Path] = []
-    for path in base.rglob("*"):
-        if _should_ignore(path, ignores):
-            continue
-        if path.is_file() and path.stat().st_size == 0:
-            empty_files.append(path)
-    return empty_files
+    return [
+        path
+        for path in iter_paths(base, ignores)
+        if path.is_file() and path.stat().st_size == 0
+    ]
 
 
 def _default_base() -> Path:
