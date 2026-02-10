@@ -206,20 +206,17 @@ class ExecutionGraph:
         applications: List[Dict[str, Any]] = []
         next_branch_id = 1  # human-friendly branch numbering for readability
         path_count = 0
-        limit_error = (
-            f"Graph contains more than {max_paths} paths; limit exceeded."
-            if max_paths is not None else None
-        )
         
         for source in sources:
             for sink in sinks:
                 paths_iter = nx.all_simple_paths(self.graph, source, sink)
                 for path in paths_iter:
                     if max_paths is not None:
-                        prospective_count = path_count + 1
-                        if prospective_count > max_paths:
-                            raise ValueError(limit_error)
-                        path_count = prospective_count
+                        path_count += 1
+                        if path_count > max_paths:
+                            raise ValueError(
+                                f"Graph contains more than {max_paths} paths; limit exceeded."
+                            )
                     else:
                         path_count += 1
                     applications.append({
