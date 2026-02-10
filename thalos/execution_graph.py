@@ -202,7 +202,7 @@ class ExecutionGraph:
         ]
         
         applications: List[Dict[str, Any]] = []
-        branch_counter = 1  # human-friendly branch numbering for readability
+        branch_id_counter = 1  # human-friendly branch numbering for readability
         path_count = 0
         
         for source in sources:
@@ -210,9 +210,11 @@ class ExecutionGraph:
                 for path in nx.all_simple_paths(self.graph, source, sink):
                     path_count += 1
                     if max_paths is not None and path_count > max_paths:
-                        raise ValueError("Branch count exceeds configured max_paths limit")
+                        raise ValueError(
+                            f"Branch count exceeds max_paths limit (found {path_count}, limit {max_paths})"
+                        )
                     applications.append({
-                        "branch_id": f"branch_{branch_counter}",
+                        "branch_id": f"branch_{branch_id_counter}",
                         "tasks": path,
                         "deployment_sequence": [
                             {
@@ -224,6 +226,6 @@ class ExecutionGraph:
                             for task_id in path
                         ]
                     })
-                    branch_counter += 1
+                    branch_id_counter += 1
         
         return applications
