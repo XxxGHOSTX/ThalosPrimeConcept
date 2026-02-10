@@ -168,3 +168,48 @@ class ExecutionGraph:
             lines.append(f"  {task_id} [{status}] - deps: {deps}")
         
         return "\n".join(lines)
+
+    def generate_branch_applications(self) -> List[Dict[str, Any]]:
+        """
+        Generate deployment-ready application specs for each root-to-leaf branch.
+        
+        Returns:
+            List of dictionaries describing each branch application with task order
+        """
+        if not self.tasks:
+            return []
+        
+        if not self.validate():
+            raise ValueError("Execution graph contains cycles")
+        
+        sources = [
+            node for node in self.graph.nodes
+            if self.graph.in_degree(node) == 0
+        ]
+        sinks = [
+            node for node in self.graph.nodes
+            if self.graph.out_degree(node) == 0
+        ]
+        
+        applications: List[Dict[str, Any]] = []
+        branch_counter = 1
+        
+        for source in sources:
+            for sink in sinks:
+                for path in nx.all_simple_paths(self.graph, source, sink):
+                    applications.append({
+                        "branch_id": f"branch_{branch_counter}",
+                        "tasks": path,
+                        "deployment_sequence": [
+                            {
+                                "task_id": task_id,
+                                "name": self.tasks[task_id].name,
+                                "status": self.tasks[task_id].status.value,
+                                "dependencies": self.tasks[task_id].dependencies,
+                            }
+                            for task_id in path
+                        ]
+                    })
+                    branch_counter += 1
+        
+        return applications

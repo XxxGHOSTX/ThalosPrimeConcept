@@ -119,6 +119,31 @@ class TestExecutionGraph(unittest.TestCase):
         results = graph.execute()
         self.assertEqual(results["t1"], 10)
         self.assertEqual(results["t2"], 20)
+    
+    def test_generate_branch_applications(self):
+        """Test generating deployment applications for each branch."""
+        def dummy_func(**kwargs):
+            return "result"
+        
+        graph = ExecutionGraph()
+        task1 = Task(task_id="t1", name="Task 1", function=dummy_func, dependencies=[])
+        task2 = Task(task_id="t2", name="Task 2", function=dummy_func, dependencies=["t1"])
+        task3 = Task(task_id="t3", name="Task 3", function=dummy_func, dependencies=["t1"])
+        
+        graph.add_task(task1)
+        graph.add_task(task2)
+        graph.add_task(task3)
+        
+        applications = graph.generate_branch_applications()
+        self.assertEqual(len(applications), 2)
+        
+        branch_tasks = {tuple(app["tasks"]) for app in applications}
+        self.assertIn(("t1", "t2"), branch_tasks)
+        self.assertIn(("t1", "t3"), branch_tasks)
+        
+        for app in applications:
+            self.assertIn("deployment_sequence", app)
+            self.assertEqual(app["deployment_sequence"][0]["task_id"], app["tasks"][0])
 
 
 class TestArtifacts(unittest.TestCase):
@@ -382,6 +407,42 @@ class TestOrchestrator(unittest.TestCase):
         
         results = pipeline.execute()
         self.assertIn("t1", results)
+
+    def test_pipeline_branch_applications(self):
+        """Test pipeline-level branch application generation."""
+        orchestrator = Orchestrator()
+        private_key, public_key = generate_keypair()
+        
+        hdr = HumanDirectiveRecord(
+            directive_id="test-hdr-branches",
+            objectives=["test"],
+            success_criteria=["pass"]
+        )
+        hdr.sign(private_key, "test@example.com")
+        
+        pipeline = orchestrator.create_pipeline(
+            pipeline_id="p3",
+            pipeline_version="1.0.0",
+            hdr=hdr
+        )
+        
+        def task_func(**kwargs):
+            return "ok"
+        
+        task1 = Task("root", "Root", task_func, [])
+        task2 = Task("child_a", "Child A", task_func, ["root"])
+        task3 = Task("child_b", "Child B", task_func, ["root"])
+        
+        pipeline.add_task(task1)
+        pipeline.add_task(task2)
+        pipeline.add_task(task3)
+        
+        apps = pipeline.generate_deployment_applications()
+        self.assertEqual(len(apps), 2)
+        for app in apps:
+            self.assertEqual(app["pipeline_id"], "p3")
+            self.assertEqual(app["container_info"], pipeline.container_info)
+            self.assertTrue(app["tasks"][0] in ("root",))
 
 
 if __name__ == "__main__":

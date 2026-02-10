@@ -121,6 +121,23 @@ class Pipeline:
         
         return results
     
+    def generate_deployment_applications(self) -> List[Dict[str, Any]]:
+        """
+        Generate deployment-ready application plans for each branch.
+        
+        Returns:
+            List of branch application dictionaries enriched with pipeline context
+        """
+        branch_apps = self.execution_graph.generate_branch_applications()
+        return [
+            {
+                **app,
+                "pipeline_id": self.pipeline_id,
+                "container_info": self.container_info,
+            }
+            for app in branch_apps
+        ]
+    
     def get_pipeline_summary(self) -> Dict[str, Any]:
         """
         Get a summary of the pipeline execution.
