@@ -54,6 +54,7 @@ if book:
 
 - Full specification: `docs/spec.md`
 - Discovery architecture: `docs/discovery_architecture.md`
+- Multi-stage runbook: `docs/multi_stage_steps.md`
 - Example usage: `examples/babel_discovery_example.py`
 - Test coverage: `tests/test_babel_discovery.py`
 
