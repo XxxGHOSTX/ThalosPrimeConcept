@@ -215,12 +215,12 @@ class ExecutionGraph:
                     remaining = max_paths - path_count
                     if remaining <= 0:
                         raise ValueError(
-                            f"Path count exceeds max_paths limit (found {path_count}, limit {max_paths})"
+                            f"Path limit of {max_paths} reached; additional branch paths exist beyond the limit."
                         )
                     paths = list(islice(paths_iter, remaining + 1))
                     if len(paths) > remaining:
                         raise ValueError(
-                            f"Path count exceeds max_paths limit (found {path_count + len(paths)}, limit {max_paths})"
+                            f"Path limit of {max_paths} exceeded; additional branch paths exist beyond max_paths."
                         )
                 
                 for path in paths:
