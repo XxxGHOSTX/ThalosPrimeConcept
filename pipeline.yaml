@@ -1,0 +1,42 @@
+pipeline_id: example_ingest_reasoner_v1
+description: "Ingest README, embed, add to vectorstore, run reasoner, produce hypothesis"
+nodes:
+  - id: ingest_readme
+    type: ingest
+    config:
+      source: git
+      repo: https://github.com/XxxGHOSTX/PythonProject2.git
+      path: README.md
+  - id: parse_text
+    type: parse
+    inputs: [ingest_readme]
+  - id: embed
+    type: embed
+    inputs: [parse_text]
+    config:
+      model: sentence-transformers/multi-qa
+  - id: index_vector
+    type: vector_upsert
+    inputs: [embed]
+    config:
+      vector_db: local_faiss
+  - id: reasoner
+    type: hybrid_reasoner
+    inputs: [index_vector, parse_text]
+    config:
+      hdr_ref: hdr_001
+      filters: ["no_wetlab", "domain:math,biocomp"]
+  - id: ranker
+    type: rank
+    inputs: [reasoner]
+  - id: simulate
+    type: simulate
+    inputs: [ranker]
+    config:
+      sandbox_image: sim-math:1.0
+  - id: artifact_sign
+    type: sign_and_store
+    inputs: [simulate]
+  - id: finalize
+    type: export
+    inputs: [artifact_sign]

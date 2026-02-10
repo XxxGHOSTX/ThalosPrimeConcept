@@ -1,0 +1,13 @@
+{
+  "hdr_id": "hdr_001",
+  "human": {
+    "name": "Tony",
+    "email": "you@example.com",
+    "signature_method": "gpg-v2"
+  },
+  "objective": "Discover mathematical identities useful for efficient biologically-inspired computation abstractions",
+  "constraints": ["no actionable wet-lab instructions", "scope: in-silico, simulation-only", "domains: math, synthetic-bio-theory"],
+  "success_criteria": ["candidate with confidence>0.85 AND simulation_consistency>0.9"],
+  "timestamp": "2026-02-09T00:00:00Z",
+  "notes": "Human specified search heuristics: prefer cross-domain co-occurrence and topological graph motifs."
+}

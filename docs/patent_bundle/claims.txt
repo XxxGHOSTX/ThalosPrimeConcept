@@ -1,0 +1,16 @@
+Independent Claim
+-----------------
+A computerized method for human-directed automated discovery, the method comprising:
+1. receiving, from a human operator, a Human Direction Record (HDR) that includes at least one objective, constraints, and a set of permitted exploration domains;
+2. constructing a Knowledge Space by ingesting and normalizing heterogeneous digital sources, indexing text into vector embeddings, and populating a knowledge graph of entities and relations, wherein each ingested element is stored with provenance metadata;
+3. generating, by a hybrid reasoning engine that combines symbolic graph traversal and language-model-based synthesis, one or more Hypothesis Objects relevant to the HDR;
+4. ranking said Hypothesis Objects by an evidence score computed from provenance-weighted similarity metrics and deterministic filters defined by the HDR;
+5. executing one or more Evaluation Jobs for selected Hypothesis Objects in an isolated simulation sandbox, wherein each Evaluation Job is executed according to an Execution Graph and produces one or more Artifacts; and
+6. recording a Provenance Record that links the HDR, Knowledge Space sources, Execution Graph steps, and resultant Artifacts into an immutable chain for subsequent human review and legal attribution.
+
+Dependent Claims (examples)
+---------------------------
+2. The method of claim 1 where constructing the Knowledge Space further comprises storing vector embeddings in a vector database and triples in a graph database, and storing raw documents in object storage.
+3. The method of claim 1 where the hybrid reasoning engine filters candidate hypotheses with deterministic rule predicates prior to language model synthesis.
+4. The method of claim 1 where the Evidence Score is a weighted sum of (i) provenance depth, (ii) cross-domain co-occurrence, (iii) simulation consistency, and (iv) human validation signals.
+5. The method of claim 1 where each HDR is cryptographically signed and appended to an immutable append-only ledger.

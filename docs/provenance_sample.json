@@ -1,0 +1,20 @@
+{
+  "artifact_id": "art_0001",
+  "pipeline_id": "example_ingest_reasoner_v1",
+  "pipeline_commit": "abc1234",
+  "inputs": [
+    {
+      "doc": "repo:PythonProject2/README.md",
+      "hdr": "hdr_001"
+    }
+  ],
+  "container_images": [
+    {
+      "node": "reasoner",
+      "digest": "sha256:aaa..."
+    }
+  ],
+  "execution_log": "gs://thalos-artifacts/run_0001/log.txt",
+  "signature": "-----BEGIN PGP SIGNATURE----- ...",
+  "timestamp": "2026-02-09T12:00:00Z"
+}
