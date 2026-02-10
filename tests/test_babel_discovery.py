@@ -70,6 +70,22 @@ class TestBabelGenerator(unittest.TestCase):
         self.assertGreater(len(candidates), 0)
         self.assertTrue(all(isinstance(addr, str) for addr in candidates))
 
+    def test_invert_substring(self):
+        """Test deterministic inversion search for a known substring."""
+        generator = BabelGenerator()
+        address = "1a2b3c"
+        page = generator.page_from_address(address)
+        substring = page[10:18]
+        
+        seed_int = int(address, 16)
+        candidates = generator.invert_substring(
+            substring,
+            max_candidates=3,
+            seed_range=(seed_int, seed_int + 1)
+        )
+        
+        self.assertTrue(any(addr == address for addr, _ in candidates))
+
 
 class TestBabelSearcher(unittest.TestCase):
     """Tests for the BabelSearcher class."""
@@ -98,6 +114,24 @@ class TestBabelSearcher(unittest.TestCase):
         results = searcher.search("abc", strategy="ngram", max_results=3)
         
         self.assertIsInstance(results, list)
+
+    def test_inversion_strategy(self):
+        """Test inversion-based search strategy."""
+        searcher = BabelSearcher()
+        address = "1a2b3c"
+        page = searcher.generator.page_from_address(address)
+        substring = page[20:26]
+        
+        results = searcher.search(
+            substring,
+            strategy="inversion",
+            max_results=2,
+            seed_range=(int(address, 16), int(address, 16) + 1)
+        )
+        
+        self.assertTrue(any(res["address"] == address for res in results))
+        for res in results:
+            self.assertEqual(res["strategy"], "inversion")
 
 
 class TestCoherenceScorer(unittest.TestCase):

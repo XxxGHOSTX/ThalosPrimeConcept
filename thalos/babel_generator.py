@@ -119,6 +119,88 @@ class BabelGenerator:
                 candidates.append((hex_address, position))
         
         return candidates
+
+    def invert_substring(
+        self,
+        substring: str,
+        max_candidates: int = 20,
+        seed_range: Tuple[int, int] = (0, 5000)
+    ) -> List[Tuple[str, int]]:
+        """
+        Deterministically search for addresses that could produce a given substring.
+
+        Uses modular constraints on the LCG to prune seeds whose initial state modulo
+        the charset size cannot yield the substring, then scans a bounded seed window.
+
+        Args:
+            substring: Target substring to locate
+            max_candidates: Maximum candidates to return
+            seed_range: Inclusive start, exclusive end seed range to test
+
+        Returns:
+            List of (hex_address, position) tuples
+        """
+        if not substring:
+            return []
+
+        substring = substring.lower()
+        try:
+            targets = [self.CHARSET.index(c) for c in substring]
+        except ValueError:
+            return []  # Contains characters outside charset
+
+        charset_mod = self.charset_length
+        a_mod = self.MULTIPLIER % charset_mod
+        c_mod = self.INCREMENT % charset_mod
+
+        # Precompute valid residues for s0 (state mod charset) that satisfy substring
+        valid_residues: List[int] = []
+        for s0_mod in range(charset_mod):
+            state_mod = s0_mod
+            ok = True
+            for target in targets:
+                if state_mod != target:
+                    ok = False
+                    break
+                state_mod = (a_mod * state_mod + c_mod) % charset_mod
+            if ok:
+                valid_residues.append(s0_mod)
+
+        if not valid_residues:
+            # If no modular residues satisfy the pattern, fall back to scanning all residues
+            valid_residues = list(range(charset_mod))
+
+        start, end = seed_range
+        start = max(0, start)
+        end = min(self.MODULUS, end)
+
+        candidates: List[Tuple[str, int]] = []
+        for seed in range(start, end):
+            if len(candidates) >= max_candidates:
+                break
+            if seed % charset_mod not in valid_residues:
+                continue
+
+            hex_address = self.address_from_seed(seed)
+            page = self.page_from_address(hex_address)
+            position = page.find(substring)
+            if position != -1:
+                candidates.append((hex_address, position))
+
+        # Fallback: if no modular matches were found, do a bounded brute-force scan
+        if candidates:
+            return candidates
+
+        for seed in range(start, end):
+            if len(candidates) >= max_candidates:
+                break
+            hex_address = self.address_from_seed(seed)
+            page = self.page_from_address(hex_address)
+            position = page.find(substring)
+            if position != -1:
+                candidates.append((hex_address, position))
+
+        return candidates
     
     def split_phrase_to_fragments(self, phrase: str, min_length: int = 3) -> List[str]:
         """
@@ -215,7 +297,8 @@ class BabelSearcher:
         self,
         query: str,
         strategy: str = "fragments",
-        max_results: int = 10
+        max_results: int = 10,
+        seed_range: Optional[Tuple[int, int]] = None
     ) -> List[dict]:
         """
         Search for a query string in the Library of Babel.
@@ -224,6 +307,7 @@ class BabelSearcher:
             query: Text to search for
             strategy: Search strategy ("exact", "fragments", "ngram")
             max_results: Maximum number of results to return
+            seed_range: Optional seed range to constrain inversion search
             
         Returns:
             List of result dictionaries with address, snippet, and score
@@ -285,6 +369,26 @@ class BabelSearcher:
                         "score": ngram_score * 100,
                         "strategy": "ngram"
                     })
+        
+        elif strategy == "inversion":
+            # Deterministic inversion-based search for substring
+            window = seed_range or (0, 5000)
+            candidates = self.generator.invert_substring(
+                query.lower(),
+                max_candidates=max_results,
+                seed_range=window
+            )
+            for hex_address, position in candidates:
+                page = self.generator.page_from_address(hex_address)
+                snippet = self._extract_snippet(page, position, len(query))
+                score = self._score_exact_match(page, query)
+                results.append({
+                    "address": hex_address,
+                    "snippet": snippet,
+                    "position": position,
+                    "score": score,
+                    "strategy": "inversion"
+                })
         
         # Sort by score and return top results
         results.sort(key=lambda x: x["score"], reverse=True)
@@ -407,7 +511,8 @@ def generate_page(hex_address: str) -> str:
 def search_babel(
     query: str,
     strategy: str = "fragments",
-    max_results: int = 10
+    max_results: int = 10,
+    seed_range: Optional[Tuple[int, int]] = None
 ) -> List[dict]:
     """
     Search the Library of Babel for a query.
@@ -416,9 +521,10 @@ def search_babel(
         query: Text to search for
         strategy: Search strategy ("exact", "fragments", "ngram")
         max_results: Maximum number of results
+        seed_range: Optional seed range used for inversion strategy
         
     Returns:
         List of result dictionaries
     """
     searcher = BabelSearcher()
-    return searcher.search(query, strategy, max_results)
+    return searcher.search(query, strategy, max_results, seed_range)

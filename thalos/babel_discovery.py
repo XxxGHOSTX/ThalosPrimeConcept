@@ -92,16 +92,18 @@ class DiscoveryEngine:
         query: str,
         strategy: str = "fragments",
         max_results: int = 10,
-        min_coherence: float = 30.0
+        min_coherence: float = 30.0,
+        seed_range: Optional[Tuple[int, int]] = None
     ) -> DiscoveryResult:
         """
         Search the Library of Babel for a query.
         
         Args:
             query: Search query string
-            strategy: Search strategy ("exact", "fragments", "ngram")
+            strategy: Search strategy ("exact", "fragments", "ngram", "inversion")
             max_results: Maximum number of results to return
             min_coherence: Minimum coherence score
+            seed_range: Optional seed range used for inversion strategy
             
         Returns:
             DiscoveryResult with pages and metadata
@@ -121,7 +123,8 @@ class DiscoveryEngine:
         search_results = self.searcher.search(
             query,
             strategy=strategy,
-            max_results=max_results * 5
+            max_results=max_results * 5,
+            seed_range=seed_range
         )
         
         # Convert to BabelPage objects with coherence scoring
@@ -323,12 +326,14 @@ class DiscoveryAPI:
         strategy = request.get('strategy', 'fragments')
         max_candidates = request.get('maxCandidates', 50)
         min_coherence = request.get('minCoherence', 30.0)
+        seed_range = request.get('seedRange')
         
         result = self.engine.search(
             query=query,
             strategy=strategy,
             max_results=max_candidates,
-            min_coherence=min_coherence
+            min_coherence=min_coherence,
+            seed_range=tuple(seed_range) if seed_range else None
         )
         
         return {
@@ -427,7 +432,8 @@ class DiscoveryAPI:
 def search_and_discover(
     query: str,
     strategy: str = "fragments",
-    max_results: int = 10
+    max_results: int = 10,
+    seed_range: Optional[Tuple[int, int]] = None
 ) -> DiscoveryResult:
     """
     Convenience function for quick searches.
@@ -436,12 +442,13 @@ def search_and_discover(
         query: Search query
         strategy: Search strategy
         max_results: Maximum results
+        seed_range: Optional seed range used for inversion strategy
         
     Returns:
         DiscoveryResult
     """
     engine = DiscoveryEngine()
-    return engine.search(query, strategy, max_results)
+    return engine.search(query, strategy, max_results, seed_range=seed_range)
 
 
 def quick_page_lookup(address: str) -> Optional[str]:
