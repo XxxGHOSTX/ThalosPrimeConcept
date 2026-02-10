@@ -88,12 +88,13 @@ class SimulationSandbox:
                 code_file = Path(tmpdir) / "sandbox_code.py"
                 
                 # Wrap code to handle input/output
+                input_json = json.dumps(input_data or {})
                 wrapped_code = f"""
 import json
 import sys
 
 # Load input data
-input_data = {json.dumps(input_data or {{}})}
+input_data = {input_json}
 
 # User code
 {code}
