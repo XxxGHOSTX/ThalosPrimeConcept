@@ -326,14 +326,48 @@ class DiscoveryAPI:
         strategy = request.get('strategy', 'fragments')
         max_candidates = request.get('maxCandidates', 50)
         min_coherence = request.get('minCoherence', 30.0)
-        seed_range = request.get('seedRange')
+        seed_range_raw = request.get('seedRange')
+        seed_range = None
+        if seed_range_raw is not None:
+            try:
+                if len(seed_range_raw) != 2:
+                    return {
+                        'success': False,
+                        'error': 'seedRange must contain exactly two entries'
+                    }
+                seed_range = (int(seed_range_raw[0]), int(seed_range_raw[1]))
+                if seed_range[0] < 0 or seed_range[1] < 0:
+                    return {
+                        'success': False,
+                        'error': 'seedRange values must be non-negative'
+                    }
+                if seed_range[0] >= seed_range[1]:
+                    return {
+                        'success': False,
+                        'error': 'seedRange start must be less than end'
+                    }
+                if seed_range[1] > BabelGenerator.MODULUS:
+                    return {
+                        'success': False,
+                        'error': f'seedRange end must be <= {BabelGenerator.MODULUS}'
+                    }
+            except TypeError:
+                return {
+                    'success': False,
+                    'error': 'seedRange must be an indexable sequence of two integers'
+                }
+            except ValueError:
+                return {
+                    'success': False,
+                    'error': 'seedRange values must be integers'
+                }
         
         result = self.engine.search(
             query=query,
             strategy=strategy,
             max_results=max_candidates,
             min_coherence=min_coherence,
-            seed_range=tuple(seed_range) if seed_range else None
+            seed_range=seed_range
         )
         
         return {
@@ -448,7 +482,12 @@ def search_and_discover(
         DiscoveryResult
     """
     engine = DiscoveryEngine()
-    return engine.search(query, strategy, max_results, seed_range=seed_range)
+    return engine.search(
+        query=query,
+        strategy=strategy,
+        max_results=max_results,
+        seed_range=seed_range
+    )
 
 
 def quick_page_lookup(address: str) -> Optional[str]:

@@ -12,6 +12,7 @@ from thalos import (
     BabelBook,
     BookAssembler,
     DiscoveryEngine,
+    DiscoveryAPI,
     generate_page,
     search_babel,
     score_page,
@@ -335,6 +336,42 @@ class TestDiscoveryEngine(unittest.TestCase):
         stats = engine.get_cache_stats()
         self.assertTrue(stats["cache_enabled"])
         self.assertGreater(stats["cached_pages"], 0)
+
+
+class TestDiscoveryAPI(unittest.TestCase):
+    """Tests for the DiscoveryAPI class."""
+
+    def test_seed_range_length_error(self):
+        """Seed range with wrong length should return an error."""
+        api = DiscoveryAPI()
+        response = api.post_search({"query": "test", "seedRange": [1]})
+
+        self.assertFalse(response["success"])
+        self.assertIn("seedRange", response["error"])
+
+    def test_seed_range_type_error(self):
+        """Non-sequence seed range should return an error."""
+        api = DiscoveryAPI()
+        response = api.post_search({"query": "test", "seedRange": 123})
+
+        self.assertFalse(response["success"])
+        self.assertIn("seedRange", response["error"])
+
+    def test_seed_range_order_error(self):
+        """Start must be non-negative and less than end."""
+        api = DiscoveryAPI()
+        response = api.post_search({"query": "test", "seedRange": [5, 1]})
+
+        self.assertFalse(response["success"])
+        self.assertIn("seedRange", response["error"])
+
+    def test_seed_range_upper_bound_error(self):
+        """End value beyond generator modulus should return an error."""
+        api = DiscoveryAPI()
+        response = api.post_search({"query": "test", "seedRange": [0, BabelGenerator.MODULUS + 1]})
+
+        self.assertFalse(response["success"])
+        self.assertIn("seedRange", response["error"])
 
 
 class TestConvenienceFunctions(unittest.TestCase):

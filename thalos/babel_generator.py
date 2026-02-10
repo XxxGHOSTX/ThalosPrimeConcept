@@ -135,7 +135,7 @@ class BabelGenerator:
         Args:
             substring: Target substring to locate
             max_candidates: Maximum candidates to return
-            seed_range: Inclusive start, exclusive end seed range to test
+            seed_range: Inclusive start, exclusive end seed range to test (clamped to [0, MODULUS))
 
         Returns:
             List of (hex_address, position) tuples
@@ -149,58 +149,57 @@ class BabelGenerator:
         except ValueError:
             return []  # Contains characters outside charset
 
-        charset_mod = self.charset_length
-        a_mod = self.MULTIPLIER % charset_mod
-        c_mod = self.INCREMENT % charset_mod
+        charset_size = self.charset_length
+        a_mod = self.MULTIPLIER % charset_size
+        c_mod = self.INCREMENT % charset_size
 
         # Precompute valid residues for s0 (state mod charset) that satisfy substring
         valid_residues: List[int] = []
-        for s0_mod in range(charset_mod):
-            state_mod = s0_mod
-            ok = True
+        for seed_residue in range(charset_size):
+            state_mod = seed_residue
+            matches_pattern = True
             for target in targets:
                 if state_mod != target:
-                    ok = False
+                    matches_pattern = False
                     break
-                state_mod = (a_mod * state_mod + c_mod) % charset_mod
-            if ok:
-                valid_residues.append(s0_mod)
+                state_mod = (a_mod * state_mod + c_mod) % charset_size
+            if matches_pattern:
+                valid_residues.append(seed_residue)
 
         if not valid_residues:
             # If no modular residues satisfy the pattern, fall back to scanning all residues
-            valid_residues = list(range(charset_mod))
+            # so substrings occurring deeper in the page are still detected.
+            valid_residues = list(range(charset_size))
 
         start, end = seed_range
+        if start >= end:
+            return []
         start = max(0, start)
         end = min(self.MODULUS, end)
+        if start >= end:
+            return []
 
-        candidates: List[Tuple[str, int]] = []
-        for seed in range(start, end):
-            if len(candidates) >= max_candidates:
-                break
-            if seed % charset_mod not in valid_residues:
-                continue
+        def scan_seed_range(residue_filtered: bool) -> List[Tuple[str, int]]:
+            found: List[Tuple[str, int]] = []
+            for seed in range(start, end):
+                if len(found) >= max_candidates:
+                    break
+                if residue_filtered and seed % charset_size not in valid_residues:
+                    continue
 
-            hex_address = self.address_from_seed(seed)
-            page = self.page_from_address(hex_address)
-            position = page.find(substring)
-            if position != -1:
-                candidates.append((hex_address, position))
+                hex_address = self.address_from_seed(seed)
+                page = self.page_from_address(hex_address)
+                position = page.find(substring)
+                if position != -1:
+                    found.append((hex_address, position))
+            return found
 
-        # Fallback: if no modular matches were found, do a bounded brute-force scan
-        if candidates:
+        has_filtered_residues = len(valid_residues) < charset_size
+        candidates = scan_seed_range(residue_filtered=has_filtered_residues)
+        if candidates or not has_filtered_residues:
             return candidates
 
-        for seed in range(start, end):
-            if len(candidates) >= max_candidates:
-                break
-            hex_address = self.address_from_seed(seed)
-            page = self.page_from_address(hex_address)
-            position = page.find(substring)
-            if position != -1:
-                candidates.append((hex_address, position))
-
-        return candidates
+        return scan_seed_range(residue_filtered=False)
     
     def split_phrase_to_fragments(self, phrase: str, min_length: int = 3) -> List[str]:
         """
