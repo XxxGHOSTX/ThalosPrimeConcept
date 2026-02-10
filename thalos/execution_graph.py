@@ -169,12 +169,19 @@ class ExecutionGraph:
         
         return "\n".join(lines)
 
-    def generate_branch_applications(self) -> List[Dict[str, Any]]:
+    def generate_branch_applications(
+        self,
+        max_paths: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
         """
         Generate deployment-ready application specs for each root-to-leaf branch.
         
         Branch IDs are 1-based to keep identifiers human-friendly and aligned with
         textual run reports.
+        
+        Args:
+            max_paths: Optional cap on the number of branch applications to generate.
+                When set, a ValueError is raised if the graph contains more paths.
         
         Returns:
             List of dictionaries describing each branch application with task order
@@ -196,10 +203,14 @@ class ExecutionGraph:
         
         applications: List[Dict[str, Any]] = []
         branch_counter = 1  # human-friendly branch numbering for readability
+        path_count = 0
         
         for source in sources:
             for sink in sinks:
                 for path in nx.all_simple_paths(self.graph, source, sink):
+                    path_count += 1
+                    if max_paths is not None and path_count > max_paths:
+                        raise ValueError("Branch count exceeds configured max_paths limit")
                     applications.append({
                         "branch_id": f"branch_{branch_counter}",
                         "tasks": path,

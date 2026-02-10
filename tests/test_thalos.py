@@ -148,6 +148,23 @@ class TestExecutionGraph(unittest.TestCase):
                 [step["task_id"] for step in app["deployment_sequence"]],
                 app["tasks"]
             )
+    
+    def test_generate_branch_applications_respects_limit(self):
+        """Ensure branch application generation enforces max_paths limit."""
+        def dummy_func(**kwargs):
+            return "result"
+        
+        graph = ExecutionGraph()
+        task1 = Task(task_id="t1", name="Task 1", function=dummy_func, dependencies=[])
+        task2 = Task(task_id="t2", name="Task 2", function=dummy_func, dependencies=["t1"])
+        task3 = Task(task_id="t3", name="Task 3", function=dummy_func, dependencies=["t1"])
+        
+        graph.add_task(task1)
+        graph.add_task(task2)
+        graph.add_task(task3)
+        
+        with self.assertRaises(ValueError):
+            graph.generate_branch_applications(max_paths=1)
 
 
 class TestArtifacts(unittest.TestCase):

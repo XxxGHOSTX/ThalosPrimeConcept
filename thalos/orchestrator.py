@@ -121,14 +121,19 @@ class Pipeline:
         
         return results
     
-    def generate_deployment_applications(self) -> List[Dict[str, Any]]:
+    def generate_deployment_applications(
+        self,
+        max_paths: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
         """
         Generate deployment-ready application plans for each branch.
         
         Returns:
             List of branch application dictionaries enriched with pipeline context
         """
-        branch_apps = self.execution_graph.generate_branch_applications()
+        branch_apps = self.execution_graph.generate_branch_applications(
+            max_paths=max_paths
+        )
         return [
             {
                 **app,
