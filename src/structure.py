@@ -98,17 +98,18 @@ def main(argv: list[str] | None = None) -> int:
     tree = render_tree(base, DEFAULT_IGNORES)
     empty_files = find_empty_files(base, DEFAULT_IGNORES)
 
-    if args.report:
-        args.report.parent.mkdir(parents=True, exist_ok=True)
-        args.report.write_text(tree)
-
     if empty_files:
         print("Empty files detected:")
         for path in empty_files:
             print(f"- {path.relative_to(base)}")
         return 1
 
-    print(tree)
+    if args.report:
+        args.report.parent.mkdir(parents=True, exist_ok=True)
+        args.report.write_text(tree)
+        print(f"Wrote file structure to {args.report}")
+    else:
+        print(tree)
     return 0
 
 
