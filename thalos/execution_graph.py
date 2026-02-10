@@ -191,7 +191,9 @@ class ExecutionGraph:
             return []
         
         if not self.validate():
-            raise ValueError("Execution graph contains cycles")
+            raise ValueError(
+                "Cannot generate branch applications: execution graph contains cycles or is invalid"
+            )
         
         sources = [
             node for node in self.graph.nodes
@@ -213,16 +215,13 @@ class ExecutionGraph:
                     paths = list(paths_iter)
                 else:
                     remaining = max_paths - path_count
+                    limit_error = f"Graph contains more than {max_paths} paths; limit exceeded."
                     if remaining <= 0:
-                        raise ValueError(
-                            f"Graph contains more than {max_paths} paths; limit exceeded."
-                        )
+                        raise ValueError(limit_error)
                     paths = list(islice(paths_iter, remaining))
                     extra_path = next(paths_iter, None)
                     if extra_path is not None:
-                        raise ValueError(
-                            f"Graph contains more than {max_paths} paths; limit exceeded."
-                        )
+                        raise ValueError(limit_error)
                 
                 for path in paths:
                     path_count += 1
