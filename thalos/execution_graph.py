@@ -202,7 +202,7 @@ class ExecutionGraph:
         ]
         
         applications: List[Dict[str, Any]] = []
-        branch_id_counter = 1  # human-friendly branch numbering for readability
+        branch_counter = 1  # human-friendly branch numbering for readability
         path_count = 0
         
         for source in sources:
@@ -211,10 +211,10 @@ class ExecutionGraph:
                     path_count += 1
                     if max_paths is not None and path_count > max_paths:
                         raise ValueError(
-                            f"Branch count exceeds max_paths limit (found {path_count}, limit {max_paths})"
+                            f"Path count exceeds max_paths limit (found {path_count}, limit {max_paths})"
                         )
                     applications.append({
-                        "branch_id": f"branch_{branch_id_counter}",
+                        "branch_id": f"branch_{branch_counter}",
                         "tasks": path,
                         "deployment_sequence": [
                             {
@@ -226,6 +226,6 @@ class ExecutionGraph:
                             for task_id in path
                         ]
                     })
-                    branch_id_counter += 1
+                    branch_counter += 1
         
         return applications
