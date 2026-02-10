@@ -56,6 +56,7 @@ if book:
 - Discovery architecture: `docs/discovery_architecture.md`
 - Multi-stage runbook: `docs/multi_stage_steps.md`
 - Chatbot/epistemic engine (Step 1): `docs/chatbot_architecture.md`
+- High-level architecture map (Step 1): `docs/architecture_map_step1.md`
 - Example usage: `examples/babel_discovery_example.py`
 - Test coverage: `tests/test_babel_discovery.py`
 
