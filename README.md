@@ -90,6 +90,7 @@ The discovery system implements a deterministic generator for Library of Babel p
 - **Exact**: Search for exact phrase matches
 - **Fragments**: Search for phrase fragments (words, pairs, triplets)
 - **N-gram**: Character n-gram based similarity
+- **Inversion**: Deterministic substring-to-address inversion over a bounded seed window
 
 ### API Overview
 

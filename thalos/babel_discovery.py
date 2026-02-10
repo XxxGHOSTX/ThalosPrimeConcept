@@ -92,16 +92,18 @@ class DiscoveryEngine:
         query: str,
         strategy: str = "fragments",
         max_results: int = 10,
-        min_coherence: float = 30.0
+        min_coherence: float = 30.0,
+        seed_range: Optional[Tuple[int, int]] = None
     ) -> DiscoveryResult:
         """
         Search the Library of Babel for a query.
         
         Args:
             query: Search query string
-            strategy: Search strategy ("exact", "fragments", "ngram")
+            strategy: Search strategy ("exact", "fragments", "ngram", "inversion")
             max_results: Maximum number of results to return
             min_coherence: Minimum coherence score
+            seed_range: Optional seed range used for inversion strategy
             
         Returns:
             DiscoveryResult with pages and metadata
@@ -121,7 +123,8 @@ class DiscoveryEngine:
         search_results = self.searcher.search(
             query,
             strategy=strategy,
-            max_results=max_results * 5
+            max_results=max_results * 5,
+            seed_range=seed_range
         )
         
         # Convert to BabelPage objects with coherence scoring
@@ -323,12 +326,48 @@ class DiscoveryAPI:
         strategy = request.get('strategy', 'fragments')
         max_candidates = request.get('maxCandidates', 50)
         min_coherence = request.get('minCoherence', 30.0)
+        seed_range_raw = request.get('seedRange')
+        seed_range = None
+        if seed_range_raw is not None:
+            try:
+                if len(seed_range_raw) != 2:
+                    return {
+                        'success': False,
+                        'error': 'seedRange must contain exactly two entries'
+                    }
+                seed_range = (int(seed_range_raw[0]), int(seed_range_raw[1]))
+                if seed_range[0] < 0 or seed_range[1] < 0:
+                    return {
+                        'success': False,
+                        'error': 'seedRange values must be non-negative'
+                    }
+                if seed_range[0] >= seed_range[1]:
+                    return {
+                        'success': False,
+                        'error': 'seedRange start must be less than end'
+                    }
+                if seed_range[1] > BabelGenerator.MODULUS:
+                    return {
+                        'success': False,
+                        'error': f'seedRange end must be <= {BabelGenerator.MODULUS}'
+                    }
+            except TypeError:
+                return {
+                    'success': False,
+                    'error': 'seedRange must be an indexable sequence of two integers'
+                }
+            except ValueError:
+                return {
+                    'success': False,
+                    'error': 'seedRange values must be integers'
+                }
         
         result = self.engine.search(
             query=query,
             strategy=strategy,
             max_results=max_candidates,
-            min_coherence=min_coherence
+            min_coherence=min_coherence,
+            seed_range=seed_range
         )
         
         return {
@@ -427,7 +466,8 @@ class DiscoveryAPI:
 def search_and_discover(
     query: str,
     strategy: str = "fragments",
-    max_results: int = 10
+    max_results: int = 10,
+    seed_range: Optional[Tuple[int, int]] = None
 ) -> DiscoveryResult:
     """
     Convenience function for quick searches.
@@ -436,12 +476,18 @@ def search_and_discover(
         query: Search query
         strategy: Search strategy
         max_results: Maximum results
+        seed_range: Optional seed range used for inversion strategy
         
     Returns:
         DiscoveryResult
     """
     engine = DiscoveryEngine()
-    return engine.search(query, strategy, max_results)
+    return engine.search(
+        query=query,
+        strategy=strategy,
+        max_results=max_results,
+        seed_range=seed_range
+    )
 
 
 def quick_page_lookup(address: str) -> Optional[str]:

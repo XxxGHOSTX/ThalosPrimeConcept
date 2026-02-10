@@ -12,6 +12,7 @@ from thalos import (
     BabelBook,
     BookAssembler,
     DiscoveryEngine,
+    DiscoveryAPI,
     generate_page,
     search_babel,
     score_page,
@@ -70,6 +71,22 @@ class TestBabelGenerator(unittest.TestCase):
         self.assertGreater(len(candidates), 0)
         self.assertTrue(all(isinstance(addr, str) for addr in candidates))
 
+    def test_invert_substring(self):
+        """Test deterministic inversion search for a known substring."""
+        generator = BabelGenerator()
+        address = "1a2b3c"
+        page = generator.page_from_address(address)
+        substring = page[10:18]
+        
+        seed_int = int(address, 16)
+        candidates = generator.invert_substring(
+            substring,
+            max_candidates=3,
+            seed_range=(seed_int, seed_int + 1)
+        )
+        
+        self.assertTrue(any(addr == address for addr, _ in candidates))
+
 
 class TestBabelSearcher(unittest.TestCase):
     """Tests for the BabelSearcher class."""
@@ -98,6 +115,24 @@ class TestBabelSearcher(unittest.TestCase):
         results = searcher.search("abc", strategy="ngram", max_results=3)
         
         self.assertIsInstance(results, list)
+
+    def test_inversion_strategy(self):
+        """Test inversion-based search strategy."""
+        searcher = BabelSearcher()
+        address = "1a2b3c"
+        page = searcher.generator.page_from_address(address)
+        substring = page[20:26]
+        
+        results = searcher.search(
+            substring,
+            strategy="inversion",
+            max_results=2,
+            seed_range=(int(address, 16), int(address, 16) + 1)
+        )
+        
+        self.assertTrue(any(res["address"] == address for res in results))
+        for res in results:
+            self.assertEqual(res["strategy"], "inversion")
 
 
 class TestCoherenceScorer(unittest.TestCase):
@@ -301,6 +336,42 @@ class TestDiscoveryEngine(unittest.TestCase):
         stats = engine.get_cache_stats()
         self.assertTrue(stats["cache_enabled"])
         self.assertGreater(stats["cached_pages"], 0)
+
+
+class TestDiscoveryAPI(unittest.TestCase):
+    """Tests for the DiscoveryAPI class."""
+
+    def test_seed_range_length_error(self):
+        """Seed range with wrong length should return an error."""
+        api = DiscoveryAPI()
+        response = api.post_search({"query": "test", "seedRange": [1]})
+
+        self.assertFalse(response["success"])
+        self.assertIn("seedRange", response["error"])
+
+    def test_seed_range_type_error(self):
+        """Non-sequence seed range should return an error."""
+        api = DiscoveryAPI()
+        response = api.post_search({"query": "test", "seedRange": 123})
+
+        self.assertFalse(response["success"])
+        self.assertIn("seedRange", response["error"])
+
+    def test_seed_range_order_error(self):
+        """Start must be non-negative and less than end."""
+        api = DiscoveryAPI()
+        response = api.post_search({"query": "test", "seedRange": [5, 1]})
+
+        self.assertFalse(response["success"])
+        self.assertIn("seedRange", response["error"])
+
+    def test_seed_range_upper_bound_error(self):
+        """End value beyond generator modulus should return an error."""
+        api = DiscoveryAPI()
+        response = api.post_search({"query": "test", "seedRange": [0, BabelGenerator.MODULUS + 1]})
+
+        self.assertFalse(response["success"])
+        self.assertIn("seedRange", response["error"])
 
 
 class TestConvenienceFunctions(unittest.TestCase):
