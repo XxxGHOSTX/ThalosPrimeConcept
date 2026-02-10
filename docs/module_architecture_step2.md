@@ -76,3 +76,60 @@ This document breaks the primary layers into concrete components, interfaces, an
 ---
 
 This Step 2 architecture provides the concrete mechanics for each layer. Step 3 will map end-to-end data flow and algorithmic strategies (HDR → EG → LoB → Artifact → Audit) including sampling and relevance heuristics.
+
+## Suggested File Structure (per module)
+```
+thalos_prime/
+├─ hdr/                            # Human Direction Record layer
+│  ├─ parser.py                    # HDR Input Parser
+│  ├─ validator.py                 # Validation Engine
+│  ├─ preprocess.py                # Preprocessing Pipeline → EG-ready commands
+│  └─ __init__.py
+│
+├─ eg/                             # Execution Graph layer
+│  ├─ builder.py                   # Graph Builder
+│  ├─ resolver.py                  # Dependency Resolver
+│  ├─ executor.py                  # Node Executor (LoB requests)
+│  ├─ monitor.py                   # Graph Monitor
+│  └─ __init__.py
+│
+├─ lob_interface/                  # Library of Babel substrate
+│  ├─ query_translator.py          # Query Translator
+│  ├─ text_extractor.py            # Text Extractor
+│  ├─ recombination.py             # Recombination Engine
+│  ├─ relevance_scorer.py          # Relevance Scorer
+│  └─ __init__.py
+│
+├─ artifacts/                      # Artifact layer
+│  ├─ transform.py                 # Transformation Engine
+│  ├─ validate.py                  # Validation Engine
+│  ├─ provenance.py                # Versioning & Audit Trail
+│  └─ __init__.py
+│
+├─ control/                        # Control & Orchestration
+│  ├─ scheduler.py                 # Scheduler
+│  ├─ dashboard.py                 # Monitoring Dashboard (CLI/API hooks)
+│  ├─ audit_logger.py              # Audit Logger
+│  ├─ interface_manager.py         # Module coordination
+│  └─ __init__.py
+│
+├─ optimization/                   # Optimization & Feedback
+│  ├─ execution_analyzer.py        # Execution Analyzer
+│  ├─ pattern_learning.py          # Pattern Learning Engine
+│  ├─ simulated_hdr.py             # Simulated HDR Generator
+│  └─ __init__.py
+│
+├─ config/                         # Shared config/constants
+│  ├─ settings.py
+│  └─ __init__.py
+│
+├─ data/                           # Storage (fragments, artifacts, logs)
+│  ├─ fragments/
+│  ├─ artifacts/
+│  └─ logs/
+│
+└─ scripts/                        # Ops & maintenance
+   ├─ run_pipeline.py
+   ├─ seed_lob_cache.py
+   └─ profile_exec.py
+```
