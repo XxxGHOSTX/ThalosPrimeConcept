@@ -144,6 +144,10 @@ class TestExecutionGraph(unittest.TestCase):
         for app in applications:
             self.assertIn("deployment_sequence", app)
             self.assertEqual(app["deployment_sequence"][0]["task_id"], app["tasks"][0])
+            self.assertEqual(
+                [step["task_id"] for step in app["deployment_sequence"]],
+                app["tasks"]
+            )
 
 
 class TestArtifacts(unittest.TestCase):

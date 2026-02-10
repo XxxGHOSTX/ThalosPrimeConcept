@@ -173,6 +173,9 @@ class ExecutionGraph:
         """
         Generate deployment-ready application specs for each root-to-leaf branch.
         
+        Branch IDs are 1-based to keep identifiers human-friendly and aligned with
+        textual run reports.
+        
         Returns:
             List of dictionaries describing each branch application with task order
         """
