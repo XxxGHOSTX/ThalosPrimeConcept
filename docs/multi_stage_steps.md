@@ -1,4 +1,4 @@
-# Thalos Prime: Multi‑Staged Execution Steps
+# Thalos Prime: Multi-Stage Execution Steps
 
 Use this checklist to run Thalos Prime workflows in discrete, auditable stages.
 
@@ -11,7 +11,7 @@ Use this checklist to run Thalos Prime workflows in discrete, auditable stages.
 - Attach task functions (simulation, reasoning, discovery) and validate the graph is acyclic.
 
 ## Stage 3 — Configure Discovery
-- Select Library of Babel search strategy (exact | fragments | ngram | inversion).
+- Select Library of Babel search strategy (exact | fragments | n-gram | inversion).
 - Set coherence thresholds, cache sizing, and desired book size/export format.
 - Optionally warm the cache with `DiscoveryEngine.get_page` for known addresses.
 
