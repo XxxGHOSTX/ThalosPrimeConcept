@@ -211,14 +211,11 @@ class ExecutionGraph:
             for sink in sinks:
                 paths_iter = nx.all_simple_paths(self.graph, source, sink)
                 for path in paths_iter:
-                    if max_paths is not None:
-                        path_count += 1
-                        if path_count > max_paths:
-                            raise ValueError(
-                                f"Graph contains more than {max_paths} paths; limit exceeded."
-                            )
-                    else:
-                        path_count += 1
+                    path_count += 1
+                    if max_paths is not None and path_count > max_paths:
+                        raise ValueError(
+                            f"Graph contains more than {max_paths} paths; limit exceeded."
+                        )
                     applications.append({
                         "branch_id": f"branch_{next_branch_id}",
                         "tasks": path,
