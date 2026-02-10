@@ -38,7 +38,7 @@ class BabelBook:
     pages: List[BabelPage]
     coherence_score: float
     assembly_method: str
-    created_at: datetime = field(default_factory=datetime.now)
+    created_at: datetime = field(default_factory=lambda: datetime.now())
     metadata: Dict = field(default_factory=dict)
     
     @property

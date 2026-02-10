@@ -260,13 +260,15 @@ class CoherenceScorer:
         total_chars = len(text)
         
         # Calculate Shannon entropy
+        import math
         entropy = 0.0
         for count in char_counts.values():
             probability = count / total_chars
-            entropy -= probability * (probability and (probability * 0.693147))  # ln(p)
+            if probability > 0:
+                entropy -= probability * math.log2(probability)
         
         # Normalize entropy (English text typically has entropy around 4.0-4.5)
-        # Library charset has 29 characters, max entropy ~= 4.86
+        # Library charset has 29 characters, max entropy = log2(29) ~= 4.86
         normalized_entropy = entropy / 4.86
         
         # Optimal range: 0.7-0.95
@@ -368,7 +370,7 @@ class PageDecoder:
         self,
         page: str,
         min_passage_length: int = 50,
-        min_coherence: float = 0.6
+        min_coherence: float = 60.0
     ) -> List[Dict[str, any]]:
         """
         Extract coherent passages from a page.
@@ -376,7 +378,7 @@ class PageDecoder:
         Args:
             page: Page content
             min_passage_length: Minimum length for a passage
-            min_coherence: Minimum coherence score for extraction
+            min_coherence: Minimum coherence score (0-100 scale) for extraction
             
         Returns:
             List of passage dictionaries with position and score
@@ -392,7 +394,7 @@ class PageDecoder:
                 # Score this passage
                 scores = self.scorer.score_page(sentence)
                 
-                if scores['composite'] / 100 >= min_coherence:
+                if scores['composite'] >= min_coherence:
                     passages.append({
                         'text': sentence,
                         'index': i,
