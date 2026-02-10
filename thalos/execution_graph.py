@@ -168,3 +168,67 @@ class ExecutionGraph:
             lines.append(f"  {task_id} [{status}] - deps: {deps}")
         
         return "\n".join(lines)
+
+    def generate_branch_applications(
+        self,
+        max_paths: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Generate deployment-ready application specs for each root-to-leaf branch.
+        
+        Branch IDs are 1-based to keep identifiers human-friendly and aligned with
+        textual run reports.
+        
+        Args:
+            max_paths: Optional cap on the number of branch applications to generate.
+                When set, a ValueError is raised if the graph contains more paths.
+        
+        Returns:
+            List of dictionaries describing each branch application with task order
+        """
+        if not self.tasks:
+            return []
+        
+        if not self.validate():
+            raise ValueError(
+                "Cannot generate branch applications: execution graph contains cycles or is invalid"
+            )
+        
+        sources = [
+            node for node in self.graph.nodes
+            if self.graph.in_degree(node) == 0
+        ]
+        sinks = [
+            node for node in self.graph.nodes
+            if self.graph.out_degree(node) == 0
+        ]
+        
+        applications: List[Dict[str, Any]] = []
+        next_branch_id = 1  # human-friendly branch numbering for readability
+        path_count = 0
+        
+        for source in sources:
+            for sink in sinks:
+                paths_iter = nx.all_simple_paths(self.graph, source, sink)
+                for path in paths_iter:
+                    path_count += 1
+                    if max_paths is not None and path_count > max_paths:
+                        raise ValueError(
+                            f"Graph contains more than {max_paths} paths; limit exceeded."
+                        )
+                    applications.append({
+                        "branch_id": f"branch_{next_branch_id}",
+                        "tasks": path,
+                        "deployment_sequence": [
+                            {
+                                "task_id": task_id,
+                                "name": self.tasks[task_id].name,
+                                "status": self.tasks[task_id].status.value,
+                                "dependencies": self.tasks[task_id].dependencies,
+                            }
+                            for task_id in path
+                        ]
+                    })
+                    next_branch_id += 1
+        
+        return applications
