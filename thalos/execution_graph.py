@@ -192,7 +192,7 @@ class ExecutionGraph:
         ]
         
         applications: List[Dict[str, Any]] = []
-        branch_counter = 1
+        branch_counter = 1  # human-friendly branch numbering for readability
         
         for source in sources:
             for sink in sinks:

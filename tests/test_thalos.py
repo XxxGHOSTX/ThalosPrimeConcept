@@ -442,7 +442,7 @@ class TestOrchestrator(unittest.TestCase):
         for app in apps:
             self.assertEqual(app["pipeline_id"], "p3")
             self.assertEqual(app["container_info"], pipeline.container_info)
-            self.assertTrue(app["tasks"][0] in ("root",))
+            self.assertEqual(app["tasks"][0], "root")
 
 
 if __name__ == "__main__":
