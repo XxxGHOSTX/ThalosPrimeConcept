@@ -2,7 +2,7 @@
 
 Purpose: Formalize human-directed discovery via HDR-anchored execution graphs, hybrid reasoning, and immutable provenance, with integrated Library of Babel discovery capabilities.
 
-Goals: reproducible discoverability, patentable capture of human inventorship, safe in-silico experimentation, and deterministic knowledge discovery.
+Goals: reproducible discoverability, human-directed experimentation, and deterministic knowledge discovery. Patentability and inventorship are not established by this README.
 
 ## Features
 
@@ -52,7 +52,7 @@ if book:
 
 ## Documentation
 
-- Full specification: `docs/spec.md`
+- Detailed internal specification is not included in the current public tree; feature status must be verified against source and tests.
 - Discovery architecture: `docs/discovery_architecture.md`
 - Multi-stage runbook: `docs/multi_stage_steps.md`
 - Example usage: `examples/babel_discovery_example.py`
